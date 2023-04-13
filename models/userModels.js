@@ -8,13 +8,18 @@ function userFromDB(user) {
         user.user_reset_code_at, user.created_at, user.updated_at);
 }
 class User {
-    constructor(user_id, user_first_name, user_name, user_email,
-        user_password) {
-        this.user_id = user_id;
+    constructor(user_first_name = null, user_name = null, user_email = null,
+        user_password = null, user_location = null) {
         this.user_first_name = user_first_name;
         this.user_name = user_name;
         this.user_email = user_email;
         this.user_password = user_password;
+        this.user_location = user_location;
+        this.user_active = true;
+        this.user_email_verified = false;
+        this.user_reset_code_at = Date.now();
+        this.created_at = Date.now();
+        this.updated_at = Date.now();
     }
 
     static async getAll() {

@@ -7,47 +7,16 @@ router.get('', (_, res) => {
     });
 });
 
-checkDuplicateUsernameOrEmail = (req, res, next) => {
-    // Username
-    User.findOne({
-        where: {
-            username: req.body.username
-        }
-    }).then(user => {
-        if (user) {
-            res.status(400).send({
-                message: "Failed! Username is already in use!"
-            });
-            return;
-        }
-
-        // Email
-        User.findOne({
-            where: {
-                email: req.body.email
-            }
-        }).then(user => {
-            if (user) {
-                res.status(400).send({
-                    message: "Failed! Email is already in use!"
-                });
-                return;
-            }
-
-            next();
-        });
-    });
-};
-
 router.post('/register', (req, res) => {
-
-    let user = new User();
+    let user = new User({
+        user_name: "he"
+    });
+    user = { ...req.body };
     user.user_email_verified = true;
     user.user_role = 'user';
     user.user_email_verified = true;
     user.user_active = true;
     user.user_reset_code_at = true;
-    user = { ...req.body };
     User.save(user).then(output => {
         let length = output.result.length;
         let name = output.result.name;
