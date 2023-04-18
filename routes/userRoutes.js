@@ -17,7 +17,7 @@ router.get('', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
     });
 });
 
-router.get('/me', [userOrAdminAuthMiddleware], async (req, res) => {
+router.get('/me', [authMiddleware], async (req, res) => {
     try {
         const userResponse = await User.getById(req.user.id);
         if (userResponse.status !== 200) {
