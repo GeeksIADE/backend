@@ -4,8 +4,9 @@ const CustomError = require('../exceptions/customError');
 const errorCodes = require('../exceptions/errorCodes');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { userOrAdminAuthMiddleware } = require('../middleware/userOrAdminAuthMiddleware');
+const { adminAuthMiddleware } = require('../middleware/adminAuthMiddleware');
 
-router.get('', authMiddleware, (_, res, next) => {
+router.get('', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
     Profile.getAll().then(output => {
         res.status(output.status).json(output.result);
     }).catch(err => {

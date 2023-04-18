@@ -9,7 +9,7 @@ const { userOrAdminAuthMiddleware } = require('../middleware/userOrAdminAuthMidd
 
 const bcrypt = require('bcrypt');
 
-router.get('', authMiddleware, (_, res, next) => {
+router.get('', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
     User.getAll().then(output => {
         res.status(output.status).json(output.result);
     }).catch(err => {
@@ -17,7 +17,7 @@ router.get('', authMiddleware, (_, res, next) => {
     });
 });
 
-router.get('/me', authMiddleware, async (req, res) => {
+router.get('/me', [userOrAdminAuthMiddleware], async (req, res) => {
     try {
         const userResponse = await User.getById(req.user.id);
         if (userResponse.status !== 200) {
