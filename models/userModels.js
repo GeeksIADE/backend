@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const bcrypt = require('bcrypt');
 const Profile = require("./profileModels");
 
 function userFromDB(user) {
@@ -73,11 +74,12 @@ class User {
     static async updateById(id, updatedUserData) {
         try {
             const { first_name, last_name, location, username, email, password } = updatedUserData;
+            const hashedPassword = await bcrypt.hash(password, 10); // hash the password
             const result = await pool.query(
                 `UPDATE users SET user_first_name = $1, user_last_name = $2, user_location = $3,
             user_name = $4, user_email = $5, user_password = $6, updated_at = NOW()
             WHERE user_id = $7 RETURNING *`,
-                [first_name, last_name, location, username, email, password, id]
+                [first_name, last_name, location, username, email, hashedPassword, id] // use the hashed password in the query
             );
 
             if (result.rowCount === 0) {
@@ -90,6 +92,7 @@ class User {
             return { status: 500, result: err };
         }
     }
+
 
     static async deleteById(id) {
         try {
