@@ -29,7 +29,6 @@ class User {
         this.games = games;
     }
 
-
     static async getAll() {
         try {
             let result = [];

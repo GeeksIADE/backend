@@ -11,6 +11,8 @@ const userRoute = require('./routes/userRoutes');
 const gameRoutes = require('./routes/gameRoutes');
 const userGameRoutes = require('./routes/userGameRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const roomRoutes = require('./routes/roomRoutes');
+
 
 // import middleware
 const { errorMiddleware } = require('./middleware/errorMiddleware');
@@ -27,12 +29,14 @@ app.options('*', cors((req, res) => {
 }));
 
 app.use(bodyParser.json());
+
 // route middlewares
 app.use('/api/auth', authRoute);
 app.use('/api/users', userRoute);
 app.use('/api/users', userGameRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/rooms', roomRoutes);
 
 // error middleware
 app.use(errorMiddleware);
