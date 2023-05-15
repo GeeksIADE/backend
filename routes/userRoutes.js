@@ -6,8 +6,8 @@ const errorCodes = require('../exceptions/errorCodes');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { adminAuthMiddleware } = require('../middleware/adminAuthMiddleware');
 const { userOrAdminAuthMiddleware } = require('../middleware/userOrAdminAuthMiddleware');
-
 const bcrypt = require('bcrypt');
+const ngeohash = require('ngeohash');
 
 router.get('', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
     User.getAll().then(output => {
@@ -32,6 +32,49 @@ router.get('/me', [authMiddleware], async (req, res) => {
     }
 });
 
+router.get('/nearby', [authMiddleware], async (req, res) => {
+    try {
+        const geohash = await User.getUserGeohash(req.user.id);
+        console.log("his");
+        if (!geohash) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Decode geohash to latitude and longitude
+        const { latitude, longitude } = ngeohash.decode(geohash);
+        console.log(latitude);
+        console.log(longitude);
+
+        // Find nearby users
+        // TODO Radius to come from user settings and dynamically change.
+        const nearbyUsers = await User.getNearbyUsersByGeohash(latitude, longitude, 10);
+        res.status(200).json(nearbyUsers);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.get('/nearby/:latitude/:longitude', [authMiddleware], async (req, res, next) => {
+    console.log("hi");
+    const { latitude, longitude } = req.params;
+
+    if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+        return next(new CustomError(400, errorCodes.E004.code, 'Invalid latitude or longitude', {}));
+    }
+
+    try {
+        const searchRadius = 1;
+        const nearbyGeohashes = ngeohash.neighbors(latitude, longitude, { radius: searchRadius });
+        console.log("hiss");
+        // Get users with nearby geohashes
+        const nearbyUsers = await User.getUsersByGeohashes(nearbyGeohashes);
+        res.status(200).json(nearbyUsers);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 router.get('/:id', [userOrAdminAuthMiddleware], (req, res, next) => {
     console.log("Params:" + req.params);
@@ -89,7 +132,8 @@ router.post('/register', async (req, res, next) => {
     const user = new User();
     user.first_name = req.body.first_name;
     user.last_name = req.body.last_name;
-    user.location = req.body.location;
+    user.latitude = req.body.latitude;
+    user.longitude = req.body.longitude;
     user.username = req.body.username;
     user.email = req.body.email;
     user.password = req.body.password;
@@ -105,6 +149,10 @@ router.post('/register', async (req, res, next) => {
 
         // Save the user to the database
         const { status, result } = await User.save(user);
+        if (user.latitude && user.longitude) {
+            User.storeUserLocation(user.username, user.latitude, user.longitude);
+            console.log("Done");
+        }
         if (status === 200) {
             res.status(200).json({ msg: "Inserted a new user", id: result.id });
         } else {
@@ -114,6 +162,5 @@ router.post('/register', async (req, res, next) => {
         next(new CustomError(500, errorCodes.E003.code, err));
     }
 });
-
 
 module.exports = router;

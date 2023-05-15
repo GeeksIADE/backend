@@ -5,6 +5,8 @@ const userValidationSchema = Joi.object({
     last_name: Joi.string().min(2).max(50).required(),
     location: Joi.string().min(2).max(100).optional(),
     username: Joi.string().min(3).max(30).required(),
+    latitude: Joi.number().min(-30000).max(30000).optional(),
+    longitude: Joi.number().min(-30000).max(30000).optional(),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
 });

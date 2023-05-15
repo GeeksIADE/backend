@@ -1,24 +1,29 @@
 const pool = require("../config/db");
 const bcrypt = require('bcrypt');
 const Profile = require("./profileModels");
+const geohash = require('ngeohash');
 
 function userFromDB(user) {
     return new User(user.user_id, user.user_first_name,
-        user.user_last_name, user.user_location, user.user_name,
+        user.user_last_name, user.user_latitude, user.user_longitude, user.user_geohash, user.geopoint, user.user_name,
         user.user_email, user.user_password, user.user_email_verified,
         user.user_role, user.user_active, user.user_reset_code, user.user_register_code,
         user.user_reset_code_at, user.created_at, user.updated_at, user.games);
 }
 
 class User {
-    constructor(id = null, first_name = null, last_name = null, location = null, username = null, email = null, password = null, isEmailVerified = null, user_role = null, user_active = null, user_reset_code = null, user_register_code = null, user_reset_code_at = null, created_at = null, updated_at = null, games = []) {
+    constructor(id = null, first_name = null, last_name = null, user_latitude = null, user_longitude = null, user_geohash = null, geopoint = null, username = null, email = null, password = null, isEmailVerified = null, user_role = null, user_active = null, user_reset_code = null, user_register_code = null, user_reset_code_at = null, created_at = null, updated_at = null, games = []) {
         this.id = id;
         this.first_name = first_name;
+        this.last_name = last_name;
+        this.user_latitude = user_latitude;
+        this.user_longitude = user_longitude;
+        this.user_geohash = user_geohash;
+        this.geopoint = geopoint;
         this.last_name = last_name;
         this.username = username;
         this.email = email;
         this.password = password;
-        this.location = location;
         this.isActive = user_active;
         this.isEmailVerified = isEmailVerified;
         this.userResetCodeAt = user_reset_code_at;
@@ -111,10 +116,10 @@ class User {
     static async save(newUser) {
         try {
             let result =
-                await pool.query(`insert into users (user_first_name, user_last_name, user_location, 
+                await pool.query(`insert into users (user_first_name, user_last_name, user_latitude, user_longitude, 
                     user_name, user_email, user_password, user_role)
-                values ($1,$2,$3,$4,$5,$6,$7) RETURNING user_id`, [newUser.first_name, newUser.last_name,
-                newUser.location, newUser.username, newUser.email, newUser.password, newUser.user_role]);
+                values ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING user_id`, [newUser.first_name, newUser.last_name,
+                newUser.latitude, newUser.longitude, newUser.username, newUser.email, newUser.password, newUser.user_role]);
 
             const userId = result.rows[0].user_id;
 
@@ -128,8 +133,6 @@ class User {
             return { status: 500, result: err };
         }
     }
-
-
 
     static async filterByRole(roleName) {
         try {
@@ -166,8 +169,61 @@ class User {
         }
     }
 
+    static async getNearbyUsersByGeohash(latitude, longitude, radius) {
+        const distanceInMeters = radius * 1000;
+        const query = `
+          SELECT * FROM users
+          WHERE ST_DWithin(
+            geopoint,
+            ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+            $3
+          );
+        `;
+        const res = await pool.query(query, [longitude, latitude, distanceInMeters]);
+        console.log(res.rows);
+        return res.rows;
+    }
 
+    static async getUsersByGeohashes(geohashes) {
+        try {
+            if (!Array.isArray(geohashes) || geohashes.length === 0) {
+                return { status: 400, result: { msg: "Invalid geohashes provided" } };
+            }
+
+            const geohashList = geohashes.map(gh => `'${gh}'`).join(', ');
+            console.log(geohashList);
+            let dbResult = await pool.query(`
+                SELECT *
+                FROM users
+                WHERE users.user_geohash IN (${geohashList})`
+            );
+
+            let result = [];
+            for (let dbUser of dbResult.rows) {
+                result.push(userFromDB(dbUser));
+            }
+            return { status: 200, result: result };
+        } catch (err) {
+            console.log(err);
+            return { status: 500, result: err };
+        }
+    }
+
+
+    static async storeUserLocation(username, latitude, longitude) {
+        console.log("ID to: " + username);
+        const geohashValue = geohash.encode(latitude, longitude);
+        const geopoint = `POINT(${longitude} ${latitude})`;
+
+        const query = 'UPDATE users SET user_geohash = $1, geopoint = ST_SetSRID(ST_GeomFromText($2), 4326) WHERE user_name = $3';
+        await pool.query(query, [geohashValue, geopoint, username]);
+    }
+    static async getUserGeohash(userId) {
+        console.log("ID: " + userId);
+        const query = 'SELECT user_geohash FROM users WHERE user_id = $1';
+        const { rows } = await pool.query(query, [userId]);
+        return rows.length > 0 ? rows[0].user_geohash : null;
+    }
 }
-
 
 module.exports = User;
