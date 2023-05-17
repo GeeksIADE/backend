@@ -1,4 +1,4 @@
-function calculateSSE(users, assignments, centers) {
+function calculateSSD(users, assignments, centers) {
     let sse = 0;
     for (let i = 0; i < users.length; i++) {
         const user = users[i];
@@ -20,7 +20,7 @@ function findBestK(users, maxK) {
                 longitude: clusterUsers.reduce((total, user) => total + user.user_longitude, 0) / clusterUsers.length,
             };
         });
-        const sse = calculateSSE(users, assignments, centers);
+        const sse = calculateSSD(users, assignments, centers);
         sseValues.push(sse);
     }
     let elbowPoint = 1;

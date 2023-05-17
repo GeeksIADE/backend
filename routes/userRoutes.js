@@ -8,6 +8,7 @@ const { adminAuthMiddleware } = require('../middleware/adminAuthMiddleware');
 const { userOrAdminAuthMiddleware } = require('../middleware/userOrAdminAuthMiddleware');
 const bcrypt = require('bcrypt');
 const ngeohash = require('ngeohash');
+const { kCluster, findBestK } = require('../models/clustering');
 
 router.get('', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
     User.getAll().then(output => {
@@ -32,16 +33,14 @@ router.get('/me', [authMiddleware], async (req, res) => {
     }
 });
 
-const { kCluster, findBestK } = require('../models/clustering');
 router.get('/nearby', [authMiddleware], async (req, res) => {
     try {
         const currentUser = req.user;
         const result = await User.getAllActive();
         const users = result.result;
         const active = await User.getActiveUserCount();
-        // const k = 10;
         const k = findBestK(users, Math.sqrt(active.result.count));
-        const assignments = kCluster(users, k);
+        const assignments = kCluster(users, k, 1000);
 
         const clusters = Array.from({ length: k }, () => ({
             users: [],
@@ -51,10 +50,13 @@ router.get('/nearby', [authMiddleware], async (req, res) => {
             maxLongitude: -Infinity,
         }));
 
+        let currentUserClusterIndex = -1;
         users.forEach((user, i) => {
             const cluster = clusters[assignments[i]];
             cluster.users.push(user);
-            console.log(user);
+            if (user.id === currentUser.id) {
+                currentUserClusterIndex = assignments[i];
+            }
             if (user.user_latitude < cluster.minLatitude) {
                 cluster.minLatitude = user.user_latitude;
             }
@@ -69,13 +71,12 @@ router.get('/nearby', [authMiddleware], async (req, res) => {
             }
         });
 
-        res.status(200).json(clusters);
+        res.status(200).json({ clusters, currentUserClusterIndex });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });
-
 
 router.get('/nearby/:latitude/:longitude', [authMiddleware], async (req, res, next) => {
     console.log("hi");

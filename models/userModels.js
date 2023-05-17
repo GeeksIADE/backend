@@ -250,6 +250,25 @@ class User {
         const { rows } = await pool.query(query, [userId]);
         return rows.length > 0 ? rows[0].user_geohash : null;
     }
+
+    static async getDistance(user1, user2) {
+        const point1 = `POINT(${user1.user_longitude} ${user1.user_latitude})`;
+        const point2 = `POINT(${user2.longitude} ${user2.latitude})`;
+
+        const sqlQuery = `
+            SELECT ST_Distance(
+                ST_GeomFromText($1, 4326),
+                ST_GeomFromText($2, 4326)
+            ) as distance
+        `;
+
+        const values = [point1, point2];
+        const result = await pool.query(sqlQuery, values);
+        return result.rows[0].distance;
+    }
+
+
+
 }
 
 module.exports = User;
