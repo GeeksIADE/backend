@@ -59,7 +59,7 @@ function kCluster(users, k) {
     let centers = users.map(user => ({
         latitude: user.user_latitude,
         longitude: user.user_longitude
-    })).sort(() => Math.random() - 0.5).slice(0, k);
+    })).sort(() => Math.random() - 0.1).slice(0, k);
 
     let assignments = [];
     let oldAssignments;
