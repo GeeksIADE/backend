@@ -39,7 +39,33 @@ class User {
             let result = [];
             let dbResult = await pool.query("Select * from users");
             for (let dbUser of dbResult.rows) {
-                console.log(dbUser);
+                // console.log(dbUser);
+                result.push(userFromDB(dbUser));
+            }
+            return { status: 200, result: result };
+        } catch (err) {
+            console.log(err);
+            return { status: 500, result: err };
+        }
+    }
+
+    static async getActiveUserCount() {
+        try {
+            let result = [];
+            let dbResult = await pool.query("SELECT count(*) FROM users WHERE user_active = true");
+            return { status: 200, result: dbResult.rows[0] };
+        } catch (err) {
+            console.log(err);
+            return { status: 500, result: err };
+        }
+    }
+
+    static async getAllActive() {
+        try {
+            let result = [];
+            let dbResult = await pool.query("SELECT * FROM users WHERE user_active = true");
+            for (let dbUser of dbResult.rows) {
+                // console.log(dbUser);
                 result.push(userFromDB(dbUser));
             }
             return { status: 200, result: result };
@@ -180,7 +206,7 @@ class User {
           );
         `;
         const res = await pool.query(query, [longitude, latitude, distanceInMeters]);
-        console.log(res.rows);
+        // console.log(res.rows);
         return res.rows;
     }
 
@@ -191,7 +217,7 @@ class User {
             }
 
             const geohashList = geohashes.map(gh => `'${gh}'`).join(', ');
-            console.log(geohashList);
+            // console.log(geohashList);
             let dbResult = await pool.query(`
                 SELECT *
                 FROM users
@@ -212,7 +238,7 @@ class User {
 
     static async storeUserLocation(username, latitude, longitude) {
         console.log("ID to: " + username);
-        const geohashValue = geohash.encode(latitude, longitude);
+        const geohashValue = geohash.encode(latitude, longitude, 5);
         const geopoint = `POINT(${longitude} ${latitude})`;
 
         const query = 'UPDATE users SET user_geohash = $1, geopoint = ST_SetSRID(ST_GeomFromText($2), 4326) WHERE user_name = $3';

@@ -32,28 +32,49 @@ router.get('/me', [authMiddleware], async (req, res) => {
     }
 });
 
+const { kCluster, findBestK } = require('../models/clustering');
 router.get('/nearby', [authMiddleware], async (req, res) => {
     try {
-        const geohash = await User.getUserGeohash(req.user.id);
-        console.log("his");
-        if (!geohash) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+        const currentUser = req.user;
+        const result = await User.getAllActive();
+        const users = result.result;
+        const active = await User.getActiveUserCount();
+        const k = findBestK(users, Math.sqrt(active.result.count));
+        const assignments = kCluster(users, k);
 
-        // Decode geohash to latitude and longitude
-        const { latitude, longitude } = ngeohash.decode(geohash);
-        console.log(latitude);
-        console.log(longitude);
+        const clusters = Array.from({ length: k }, () => ({
+            users: [],
+            minLatitude: Infinity,
+            maxLatitude: -Infinity,
+            minLongitude: Infinity,
+            maxLongitude: -Infinity,
+        }));
 
-        // Find nearby users
-        // TODO Radius to come from user settings and dynamically change.
-        const nearbyUsers = await User.getNearbyUsersByGeohash(latitude, longitude, 10);
-        res.status(200).json(nearbyUsers);
+        users.forEach((user, i) => {
+            const cluster = clusters[assignments[i]];
+            cluster.users.push(user);
+            console.log(user);
+            if (user.user_latitude < cluster.minLatitude) {
+                cluster.minLatitude = user.user_latitude;
+            }
+            if (user.user_latitude > cluster.maxLatitude) {
+                cluster.maxLatitude = user.user_latitude;
+            }
+            if (user.user_longitude < cluster.minLongitude) {
+                cluster.minLongitude = user.user_longitude;
+            }
+            if (user.user_longitude > cluster.maxLongitude) {
+                cluster.maxLongitude = user.user_longitude;
+            }
+        });
+
+        res.status(200).json(clusters);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
     }
 });
+
 
 router.get('/nearby/:latitude/:longitude', [authMiddleware], async (req, res, next) => {
     console.log("hi");
