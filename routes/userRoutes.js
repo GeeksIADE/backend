@@ -37,6 +37,8 @@ router.get('/nearby', [authMiddleware], async (req, res) => {
     try {
         const currentUser = req.user;
         const result = await User.getAllActive();
+        const resultUser = await User.getById(req.user.id);
+        const user = resultUser.result;
         const users = result.result;
         const active = await User.getActiveUserCount();
         const k = findBestK(users, Math.sqrt(active.result.count));
@@ -71,7 +73,7 @@ router.get('/nearby', [authMiddleware], async (req, res) => {
             }
         });
 
-        res.status(200).json({ clusters, currentUserClusterIndex });
+        res.status(200).json({ clusters, currentUserClusterIndex, user });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });

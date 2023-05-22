@@ -13,7 +13,7 @@ router.get('/:user_id/games', authMiddleware, (req, res) => {
         });
 });
 
-router.post('/:user_id/games', authMiddleware, (req, res) => {
+router.post('/:user_id/games', authMiddleware, async (req, res) => {
     const userGame = new UserGame(req.params.user_id, req.body.game_id, req.body.game_steam_id, req.body.game_rank);
     UserGame.create(userGame)
         .then(output => {

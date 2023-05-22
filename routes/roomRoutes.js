@@ -93,8 +93,6 @@ router.get('/:id/requirements', async (req, res) => {
     res.status(result.status).json(result.result);
 });
 
-
-// Join a room
 router.post('/join/:room_id', authMiddleware, async (req, res) => {
     const room_id = req.params.room_id;
     const user_id = req.user.id;
@@ -114,6 +112,15 @@ router.post('/join/:room_id', authMiddleware, async (req, res) => {
     if (game.has_roles && !role) {
         return res.status(400).json({ message: 'A role is required to join this room.' });
     }
+
+    // Join the room's WebSocket channel
+    const roomChannel = `room:${room_id}`;
+
+    // Log the roomChannel and user_id
+    console.log('Joining WebSocket channel:', roomChannel);
+    console.log('User ID:', user_id);
+
+    req.app.get('socketio').of('/chat').in(roomChannel).socketsJoin(`${roomChannel}:${user_id}`);
 
     const result = await Room.join(room_id, user_id, role);
     res.status(result.status).json(result.result);
