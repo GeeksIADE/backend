@@ -42,6 +42,8 @@ router.get('/nearby', [authMiddleware], async (req, res) => {
         const users = result.result;
         const active = await User.getActiveUserCount();
         const k = findBestK(users, Math.sqrt(active.result.count));
+        // const k = 8;
+        console.log(k);
         const assignments = kCluster(users, k, 1000);
 
         const clusters = Array.from({ length: k }, () => ({
