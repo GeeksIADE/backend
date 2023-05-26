@@ -17,6 +17,17 @@ class Game {
         }
     }
 
+    static async getModesByGameId(id) {
+        console.log(id);
+        try {
+            const dbResult = await pool.query("SELECT modes.* FROM games, modes, games_modes where game_id=games_id and mode_id=modes_id and game_id=$1", [id]);
+            return { status: 200, result: dbResult.rows };
+        } catch (err) {
+            console.log(err);
+            return { status: 500, result: err };
+        }
+    }
+
     static async create(game) {
         try {
             const dbResult = await pool.query("INSERT INTO games (game_name, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING *",

@@ -18,6 +18,14 @@ router.get('', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
     });
 });
 
+router.get('/count', (_, res, next) => {
+    User.getActiveUserCount().then(output => {
+        res.status(output.status).json(output.result);
+    }).catch(_ => {
+        next(new CustomError(500, errorCodes.E002.code, errorCodes.E002.message));
+    });
+});
+
 router.get('/me', [authMiddleware], async (req, res) => {
     try {
         const userResponse = await User.getById(req.user.id);

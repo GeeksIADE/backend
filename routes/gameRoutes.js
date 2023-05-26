@@ -12,6 +12,15 @@ router.get('/', (_, res) => {
     });
 });
 
+router.get('/:id/modes', (req, res) => {
+    Game.getModesByGameId(req.params.id).then(output => {
+        res.status(output.status).json(output.result);
+    }).catch(err => {
+        res.status(500).json({ message: 'An error occurred while fetching games.' });
+    });
+});
+
+
 router.get('/:id', (req, res) => {
     const gameId = parseInt(req.params.id);
     Game.getById(gameId).then(output => {
