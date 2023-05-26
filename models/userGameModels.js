@@ -19,6 +19,16 @@ class UserGame {
         }
     }
 
+    static async getGamesByUserId(user_id) {
+        try {
+            const dbResult = await pool.query('SELECT games.* FROM users_games, games WHERE users_id=$1 and games_id=game_id', [user_id]);
+            return { status: 200, result: dbResult.rows };
+        } catch (err) {
+            console.log(err);
+            return { status: 500, result: err };
+        }
+    }
+
     static async create(userGame) {
         try {
             const dbResult = await pool.query('INSERT INTO users_games (users_id, games_id, game_steam_id, game_rank, created_at, updated_at) VALUES ($1, $2, $3, $4, NOW(), NOW()) RETURNING *',

@@ -9,8 +9,19 @@ const { userOrAdminAuthMiddleware } = require('../middleware/userOrAdminAuthMidd
 const bcrypt = require('bcrypt');
 const ngeohash = require('ngeohash');
 const { kCluster, findBestK } = require('../models/clustering');
+const UserGame = require('../models/userGameModels');
 
-router.get('', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
+router.get('/games', authMiddleware, (req, res) => {
+    UserGame.getGamesByUserId(req.user.id)
+        .then(output => {
+            res.status(output.status).json(output.result);
+        })
+        .catch(err => {
+            res.status(500).json({ message: 'An error occurred while fetching user games.' });
+        });
+});
+
+router.get('/', [authMiddleware, adminAuthMiddleware], (_, res, next) => {
     User.getAll().then(output => {
         res.status(output.status).json(output.result);
     }).catch(err => {
