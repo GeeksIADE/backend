@@ -1,4 +1,3 @@
-// gameRoutes.js
 const router = require('express').Router();
 const { adminAuthMiddleware } = require('../middleware/adminAuthMiddleware');
 const { authMiddleware } = require('../middleware/authMiddleware');

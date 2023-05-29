@@ -53,6 +53,7 @@ const gameRoutes = require('./routes/gameRoutes');
 const userGameRoutes = require('./routes/userGameRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const modeRoutes = require('./routes/modeRoutes');
 
 // import middleware
 const { errorMiddleware } = require('./middleware/errorMiddleware');
@@ -81,6 +82,7 @@ app.use('/api/users', userGameRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/modes', modeRoutes);
 
 // error middleware
 app.use(errorMiddleware);

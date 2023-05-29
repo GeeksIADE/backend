@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt');
 const ngeohash = require('ngeohash');
 const { kCluster, findBestK } = require('../models/clustering');
 const UserGame = require('../models/userGameModels');
+const Room = require('../models/roomModels');
 
 router.get('/games', authMiddleware, (req, res) => {
     UserGame.getGamesByUserId(req.user.id)
@@ -46,6 +47,25 @@ router.get('/me', [authMiddleware], async (req, res) => {
 
         const user = userResponse.result;
         res.json(user);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+router.get('/me/rooms', [authMiddleware], async (req, res) => {
+    try {
+        const publicRoomsResp = await Room.getJoinedPublicRoomsByUser(req.user.id);
+        const privateRoomsResp = await Room.getJoinedPrivateRoomsByUser(req.user.id);
+        if (publicRoomsResp.status !== 200) {
+            return res.status(publicRoomsResp.status).json(publicRoomsResp.result);
+        }
+        else if (privateRoomsResp.status !== 200) {
+            return res.status(privateRoomsResp.status).json(privateRoomsResp.result);
+        }
+        const publicRooms = publicRoomsResp.result;
+        const privateRooms = privateRoomsResp.result;
+        res.json({ public: publicRooms, private: privateRooms });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
